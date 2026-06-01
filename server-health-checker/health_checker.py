@@ -1,6 +1,8 @@
 import json
 import os
-import requests
+import time
+from urllib.request import urlopen
+from urllib.error import URLError, HTTPError
 
 
 CONFIG_FILE = "config.json"
@@ -24,12 +26,36 @@ def load_servers():
 
 
 def check_server(url):
-    response = requests.get(url)
+    start_time = time.perf_counter()
 
-    return {
-        "url": url,
-        "status_code": response.status_code
-    }
+    try:
+        response = urlopen(url, timeout=5)
+        end_time = time.perf_counter()
+
+        response_time_ms = round((end_time - start_time) * 1000)
+
+        return {
+            "url": url,
+            "status_code": response.status,
+            "response_time_ms": response_time_ms
+        }
+
+    except HTTPError as error:
+        end_time = time.perf_counter()
+        response_time_ms = round((end_time - start_time) * 1000)
+
+        return {
+            "url": url,
+            "status_code": error.code,
+            "response_time_ms": response_time_ms
+        }
+
+    except URLError:
+        return {
+            "url": url,
+            "status_code": None,
+            "response_time_ms": None
+        }
 
 
 servers = load_servers()
