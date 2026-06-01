@@ -13,7 +13,7 @@ def load_servers():
 
     if env_servers:
         servers = env_servers.split(",")
-        return [server.strip() for server in servers]
+        return [server.strip() for server in servers if server.strip()]
 
     try:
         with open(CONFIG_FILE, "r") as file:
@@ -33,11 +33,13 @@ def check_server(url):
         end_time = time.perf_counter()
 
         response_time_ms = round((end_time - start_time) * 1000)
+        status_code = response.status
 
         return {
             "url": url,
-            "status_code": response.status,
-            "response_time_ms": response_time_ms
+            "status_code": status_code,
+            "response_time_ms": response_time_ms,
+            "healthy": 200 <= status_code <= 299
         }
 
     except HTTPError as error:
@@ -47,14 +49,16 @@ def check_server(url):
         return {
             "url": url,
             "status_code": error.code,
-            "response_time_ms": response_time_ms
+            "response_time_ms": response_time_ms,
+            "healthy": False
         }
 
     except URLError:
         return {
             "url": url,
             "status_code": None,
-            "response_time_ms": None
+            "response_time_ms": None,
+            "healthy": False
         }
 
 
