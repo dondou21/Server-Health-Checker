@@ -15,16 +15,29 @@ def load_servers():
     env_servers = os.getenv("SERVERS")
 
     if env_servers:
-        return [server.strip() for server in env_servers.split(",") if server.strip()]
+        servers = [
+            server.strip()
+            for server in env_servers.split(",")
+            if server.strip()
+        ]
 
-    try:
+        if not servers:
+            raise Exception("SERVERS environment variable is empty.")
+
+        return servers
+
+    if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as file:
             config = json.load(file)
-            return config["servers"]
-    except FileNotFoundError:
-        raise Exception("No SERVERS environment variable or config.json file found.")
-    except KeyError:
-        raise Exception("config.json must contain a 'servers' list.")
+
+        servers = config.get("servers")
+
+        if not servers:
+            raise Exception("config.json must contain a non-empty 'servers' list.")
+
+        return servers
+
+    raise Exception("No SERVERS environment variable or config.json file found.")
 
 
 def check_server(url):
@@ -96,7 +109,6 @@ failed_services = []
 
 for server in servers:
     result = check_server(server)
-
     print(format_result(result))
 
     if not result["healthy"]:
