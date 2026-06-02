@@ -1,8 +1,7 @@
 {
   "servers": [
-    "https://httpbin.org/status/200",
-    "https://httpbin.org/status/500",
-    "https://httpbin.org/delay/2",
-    "https://httpbin.org/json"
+    "https://jsonplaceholder.typicode.com/posts/1",
+    "https://jsonplaceholder.typicode.com/invalid-url",
+    "https://httpstat.us/200?sleep=2000"
   ]
 }
