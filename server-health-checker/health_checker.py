@@ -2,6 +2,7 @@ import json
 import os
 import time
 import socket
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
 
@@ -9,6 +10,7 @@ from urllib.error import URLError, HTTPError
 CONFIG_FILE = "config.json"
 SLOW_LIMIT_MS = 500
 REQUEST_TIMEOUT = 3
+MAX_WORKERS = 5
 
 
 def load_servers():
@@ -107,12 +109,15 @@ def check_all_servers():
     servers = load_servers()
     failed_services = []
 
-    for server in servers:
-        result = check_server(server)
-        print(format_result(result))
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [executor.submit(check_server, server) for server in servers]
 
-        if not result["healthy"]:
-            failed_services.append(server)
+        for future in as_completed(futures):
+            result = future.result()
+            print(format_result(result))
+
+            if not result["healthy"]:
+                failed_services.append(result["url"])
 
     print()
 
