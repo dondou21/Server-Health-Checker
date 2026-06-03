@@ -2,6 +2,8 @@ import json
 import os
 import time
 import socket
+import smtplib
+from email.message import EmailMessage
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
@@ -120,6 +122,36 @@ def format_result(result):
     return f"{url} — DOWN ({result['status_code']})"
 
 
+def send_alert(failed_services):
+    smtp_email = os.getenv("SMTP_EMAIL")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    alert_email = os.getenv("ALERT_EMAIL")
+
+    if not smtp_email or not smtp_password or not alert_email:
+        print("Alert skipped: email environment variables are not configured.")
+        return
+
+    message = EmailMessage()
+    message["Subject"] = "Server Health Checker Alert"
+    message["From"] = smtp_email
+    message["To"] = alert_email
+
+    message.set_content(
+        "The following services failed:\n\n"
+        + "\n".join(failed_services)
+    )
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(smtp_email, smtp_password)
+            smtp.send_message(message)
+
+        print("Alert email sent.")
+
+    except Exception as error:
+        print(f"Alert failed: {error}")
+
+
 def check_all_servers():
     servers = load_servers()
     failed_services = []
@@ -138,6 +170,7 @@ def check_all_servers():
 
     if failed_services:
         print("Failed services:", ", ".join(failed_services))
+        send_alert(failed_services)
     else:
         print("Failed services: None")
 
