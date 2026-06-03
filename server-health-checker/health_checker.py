@@ -11,6 +11,7 @@ CONFIG_FILE = "config.json"
 SLOW_LIMIT_MS = 500
 REQUEST_TIMEOUT = 3
 MAX_WORKERS = 5
+RETRY_COUNT = 2
 
 
 def load_servers():
@@ -42,7 +43,7 @@ def load_servers():
     raise Exception("No SERVERS environment variable or config.json file found.")
 
 
-def check_server(url):
+def make_request(url):
     start_time = time.perf_counter()
 
     try:
@@ -86,6 +87,20 @@ def check_server(url):
             "slow": False,
             "error": "TIMEOUT"
         }
+
+
+def check_server(url):
+    last_result = None
+
+    for attempt in range(RETRY_COUNT + 1):
+        result = make_request(url)
+
+        if result["healthy"]:
+            return result
+
+        last_result = result
+
+    return last_result
 
 
 def format_result(result):
