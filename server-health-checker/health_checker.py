@@ -103,20 +103,24 @@ def format_result(result):
     return f"{url} — DOWN ({result['status_code']})"
 
 
-servers = load_servers()
+def check_all_servers():
+    servers = load_servers()
+    failed_services = []
 
-failed_services = []
+    for server in servers:
+        result = check_server(server)
+        print(format_result(result))
 
-for server in servers:
-    result = check_server(server)
-    print(format_result(result))
+        if not result["healthy"]:
+            failed_services.append(server)
 
-    if not result["healthy"]:
-        failed_services.append(server)
+    print()
 
-print()
+    if failed_services:
+        print("Failed services:", ", ".join(failed_services))
+    else:
+        print("Failed services: None")
 
-if failed_services:
-    print("Failed services:", ", ".join(failed_services))
-else:
-    print("Failed services: None")
+
+if __name__ == "__main__":
+    check_all_servers()
